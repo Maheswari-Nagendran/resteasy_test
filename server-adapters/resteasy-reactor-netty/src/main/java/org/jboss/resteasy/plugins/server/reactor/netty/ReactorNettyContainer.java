@@ -1,5 +1,6 @@
 package org.jboss.resteasy.plugins.server.reactor.netty;
 
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -10,6 +11,7 @@ import org.jboss.resteasy.plugins.server.embedded.SecurityDomain;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.jboss.resteasy.util.PortProvider;
 import reactor.blockhound.BlockHound;
+import reactor.blockhound.BlockingOperationError;
 import reactor.core.scheduler.ReactorBlockHoundIntegration;
 
 public class ReactorNettyContainer {
@@ -17,6 +19,16 @@ public class ReactorNettyContainer {
     private static final Logger log = Logger.getLogger(ReactorNettyContainer.class);
 
     public static ReactorNettyJaxrsServer reactorNettyJaxrsServer;
+
+    @Provider
+    public static class TestAppExceptionHandler implements ExceptionMapper<Throwable> {
+        @Override
+        public Response toResponse(Throwable exception)
+        {
+            exception.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(exception.getMessage()).build();
+        }
+    }
 
     public static ResteasyDeployment start(boolean enableBlockHound) throws Exception
     {
@@ -61,6 +73,8 @@ public class ReactorNettyContainer {
     public static ResteasyDeployment start(String bindPath, SecurityDomain domain) throws Exception
     {
         ResteasyDeployment deployment = new ResteasyDeploymentImpl();
+        // TODO lazy code, remove soon.
+        deployment.getActualProviderClasses().add(TestAppExceptionHandler.class);
         deployment.setSecurityEnabled(true);
         return start(bindPath, domain, deployment);
     }

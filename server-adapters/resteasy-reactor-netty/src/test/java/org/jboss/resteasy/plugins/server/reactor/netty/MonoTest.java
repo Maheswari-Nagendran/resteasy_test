@@ -56,7 +56,6 @@ public class MonoTest {
    @BeforeClass
    public static void setup() throws Exception {
       ResteasyDeployment deployment = ReactorNettyContainer.start(true);
-      // TODO Need to log stack trace using ExceptionMapper
       Registry registry = deployment.getRegistry();
       registry.addPerRequestResource(MonoResource.class);
       client = ClientBuilder.newClient();
