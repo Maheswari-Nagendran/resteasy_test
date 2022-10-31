@@ -1,10 +1,16 @@
 package org.jboss.resteasy.plugins.server.reactor.netty;
 
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.core.ResteasyDeploymentImpl;
+import org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext;
 import org.jboss.resteasy.plugins.server.embedded.SecurityDomain;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.jboss.resteasy.util.PortProvider;
+import reactor.blockhound.BlockHound;
+import reactor.core.scheduler.ReactorBlockHoundIntegration;
 
 public class ReactorNettyContainer {
 
@@ -12,9 +18,20 @@ public class ReactorNettyContainer {
 
     public static ReactorNettyJaxrsServer reactorNettyJaxrsServer;
 
-    public static ResteasyDeployment start() throws Exception
+    public static ResteasyDeployment start(boolean enableBlockHound) throws Exception
     {
+        if (enableBlockHound) {
+            // Uncomment to to pass testMonoMap
+            // BlockHound.builder().allowBlockingCallsInside(
+            //      AbstractWriterInterceptorContext.class.getName(), "writeTo").install();
+            BlockHound.install();
+            log.info("Block-Hound installed. woof!");
+        }
         return start("");
+    }
+
+    public static ResteasyDeployment start() throws Exception {
+       return start(false);
     }
 
     public static ResteasyDeployment start(String bindPath) throws Exception

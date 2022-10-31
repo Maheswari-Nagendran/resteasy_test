@@ -102,6 +102,11 @@
             <artifactId>resteasy-client</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.projectreactor.tools</groupId>
+            <artifactId>blockhound</artifactId>
+            <version>1.0.6.RELEASE</version>
+        </dependency>
 
         <!-- Test dependencies -->
         <dependency>

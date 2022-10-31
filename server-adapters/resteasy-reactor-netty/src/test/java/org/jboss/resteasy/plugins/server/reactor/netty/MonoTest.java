@@ -1,5 +1,12 @@
 package org.jboss.resteasy.plugins.server.reactor.netty;
 
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 import org.jboss.resteasy.spi.Registry;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.junit.AfterClass;
@@ -16,6 +23,9 @@ import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.jboss.resteasy.test.TestPortProvider.generateURL;
 
@@ -31,13 +41,22 @@ public class MonoTest {
                  ? businessLogic.delayElement(Duration.ofMillis(delayMs))
                  : businessLogic;
       }
+      @Path("/map")
+      @GET
+      @Produces(MediaType.APPLICATION_JSON)
+      public Mono<Map<String, String>> delayMap() {
+            Map<String, String> map = new HashMap<>();
+            map.put("key", "value");
+            return Mono.just(map);
+      }
    }
 
    private static Client client;
 
    @BeforeClass
    public static void setup() throws Exception {
-      ResteasyDeployment deployment = ReactorNettyContainer.start();
+      ResteasyDeployment deployment = ReactorNettyContainer.start(true);
+      // TODO Need to log stack trace using ExceptionMapper
       Registry registry = deployment.getRegistry();
       registry.addPerRequestResource(MonoResource.class);
       client = ClientBuilder.newClient();
@@ -54,6 +73,20 @@ public class MonoTest {
       WebTarget target = client.target(generateURL("/mono"));
       String val = target.request().get(String.class);
       Assert.assertEquals("Mono says hello!", val);
+   }
+
+   @Test(timeout = 5_000)
+   public void testMonoMap() {
+      WebTarget target = client.target(generateURL("/mono/map"));
+      var response = target.request().get();
+
+      if(response.getStatus() == Response.Status.OK.getStatusCode()) {
+         var val = response.readEntity(new GenericType<Map<String, String>>() {
+         });
+         Assert.assertFalse("Mono returns value!", val.isEmpty());
+      } else {
+         Assert.fail(String.format("Got non-ok response. Code: %s, error: %s", response.getStatus(), response.readEntity(String.class)));
+      }
    }
 
    @Test(timeout = 5_000)
